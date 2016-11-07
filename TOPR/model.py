@@ -43,30 +43,44 @@ class TOPRAction(Model):
         """
         self.schedule.step()
 
+    # Create trail
     def create_trail(self):
-        x = random.randrange(round(self.width/5))
-        y = random.randrange(round(self.height/5))
+        x = random.randrange(round(self.width))
+        y = random.randrange(round(self.height))
         self.trail_start_position = (x, y)
         self.grid.place_agent(Trail((x, y), self), (x, y))
         self.schedule.add(Trail((x, y), self))
 
-        # Create trail
         for i in range(trail_length):
             next_trail = self.grid.get_neighborhood((x, y), moore=True)
-            while True:
-                (x, y) = random.choice(next_trail)
-                temp_x = x
-                temp_y = y
-                temp_next_trail = self.grid.get_neighborhood((temp_x, temp_y), moore=True)
-                trails_number = 0
-                for cells in temp_next_trail:
-                    print(isinstance(self.grid.get_cell_list_contents([cells]), Trail))
-                    if self.grid.get_cell_list_contents([cells]) is Trail:  # error - returns list / not trail etc.
-                        # print("it's trail")
-                        trails_number += 1
+            (temp_x, temp_y) = random.choice(next_trail)
+            next_next_trail = self.grid.get_neighborhood((temp_x, temp_y), moore=True)
 
-                if trails_number < 2:
-                    self.grid.place_agent(Trail(next_trail, self), (x, y))
-                    self.schedule.add(Trail((x, y), self))
-                    break
+            trails_number = 0
+            for cells in next_next_trail:
+                if self.grid.get_cell_list_contents([cells]):
+                    trails_number += 1
 
+            if trails_number < 2:
+                self.grid.place_agent(Trail(next_next_trail, self), (temp_x, temp_y))
+                self.schedule.add(Trail((temp_x, temp_y), self))
+                x = temp_x
+                y = temp_y
+
+            # while True:
+            #     (x, y) = random.choice(next_trail)
+            #     temp_x = x
+            #     temp_y = y
+            #     next_trail.remove((x, y))
+            #     temp_next_trail = self.grid.get_neighborhood((temp_x, temp_y), moore=True)
+            #
+            #     trails_number = 0
+            #     for cells in temp_next_trail:
+            #         if self.grid.get_cell_list_contents([cells]):
+            #             trails_number += 1
+            #
+            #     if trails_number < 2:
+            #         self.grid.place_agent(Trail(next_trail, self), (x, y))
+            #         self.schedule.add(Trail((x, y), self))
+            #         break
+            #
