@@ -16,7 +16,6 @@ class Tourist(Agent):
                 Otherwise, only up, down, left, right.
         """
         super().__init__(pos, model)
-        self.pos = pos
         self.speed = speed
         self.moore = moore
 
@@ -28,20 +27,20 @@ class Tourist(Agent):
         """
         Step one cell in any allowable direction.
         """
-        # Pick the next cell from the adjacent cells.
-        next_moves = self.model.grid.get_neighborhood(self.pos, self.moore, True)
-        next_move = random.choice(next_moves)
-        # Now move:
-        self.model.grid.move_agent(self, next_move)
+        next_moves = self.model.grid.get_neighborhood(self.pos, self.moore)
+        for cell in next_moves:
+            temp = self.model.grid.get_cell_list_contents([cell])
+            if self.model.grid.get_cell_list_contents([cell]):
+                self.model.grid.move_agent(self, cell)
 
 
 class Trail(Agent):
-    def __init__(self, pos, model):
+    def __init__(self, pos, model, unique_id):
         """
         Create a cell, in the given state, at the given x, y position.
         """
         super().__init__(pos, model)
-        self.pos = pos
+        self.id = unique_id
 
     @staticmethod
     def advance():
