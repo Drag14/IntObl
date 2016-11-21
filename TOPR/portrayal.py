@@ -1,4 +1,4 @@
-from TOPR.agents import Tourist, Trail
+from TOPR.agents import Tourist, TrailElement
 
 
 def tourist_trial_portrayal(agent):
@@ -13,7 +13,7 @@ def tourist_trial_portrayal(agent):
         portrayal["r"] = 0.5
         portrayal["Layer"] = 1
 
-    elif type(agent) is Trail:
+    elif type(agent) is TrailElement:
         portrayal["Color"] = "Black"
         portrayal["Shape"] = "rect"
         portrayal["Layer"] = 0
