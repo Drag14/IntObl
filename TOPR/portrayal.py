@@ -13,7 +13,7 @@ def tourist_trial_portrayal(agent):
         portrayal["r"] = 0.5
         portrayal["Layer"] = 1
 
-    elif type(agent) is TrailElement:
+    elif type(agent) is TrailElement:  # and TrailElement.get_probability > 10
         portrayal["Color"] = "Black"
         portrayal["Shape"] = "rect"
         portrayal["Layer"] = 0
