@@ -1,5 +1,6 @@
 from mesa import Agent
 import random
+from TOPR.config import height, width, initial_tourist
 
 
 class Tourist(Agent):
@@ -16,20 +17,34 @@ class Tourist(Agent):
         super().__init__(pos, model)
         self.moore = moore
         self.__direction = 'forward'
+        self.__model = model
         self.__energy = energy
         self.__pos = pos
+
+        self.model.grid.place_agent(self, pos)
+        self.model.schedule.add(self)
+
+        for i in range(0, initial_tourist - 1):
+            x = random.randrange(width)
+            y = random.randrange(height)
+            self.model.grid.place_agent(self, (x, y))
+            self.model.schedule.add(self)
 
     def advance(self):
         """
         Step one cell in any allowable direction with concrete probability distribution.
         0.89 - forward, 0.1 - return, 0.01 - stay in place
         """
+        model = self.get_model()
         x, y = self.get_position()
-        elements = list(self.model.grid[x][y])
+
+        elements = list(model.grid[x][y])
 
         for i in range(0, len(elements)):
             if type(elements[i]) is TrailElement:
-                trail_position = elements[i].get_position_in_trail()
+                trail_position = elements[i].get_position_in_trail()  # get trail_element position in trail
+
+        # model.trail.
 
     def get_energy(self):
         return self.__energy
@@ -48,6 +63,12 @@ class Tourist(Agent):
 
     def set_direction(self, direction):
         self.__direction = direction
+
+    def set_model(self, model):
+        self.__model = model
+
+    def get_model(self):
+        return self.__model
 
 
 class TrailElement(Agent):
