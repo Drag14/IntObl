@@ -15,9 +15,13 @@ class Tourist(Agent):
         """
         super().__init__(pos, model)
         self.moore = moore
+        self.model = model
         self.__direction = 'forward'
         self.__energy = energy
         self.__pos = pos
+
+        self.model.grid.place_agent(self, pos)
+        self.model.schedule.add(self)
 
     def advance(self):
         """
@@ -30,6 +34,10 @@ class Tourist(Agent):
         for i in range(0, len(elements)):
             if type(elements[i]) is TrailElement:
                 trail_position = elements[i].get_position_in_trail()
+                next_trail = self.model.trail.get_trail_from_position(trail_position + 1)
+                if next_trail:
+                    where_to_go = next_trail.get_geo_pos()
+                    self.model.grid.move_agent(self, where_to_go)
 
     def get_energy(self):
         return self.__energy
@@ -56,7 +64,7 @@ class TrailElement(Agent):
         Create a cell of trail, at the given x, y position.
         """
         super().__init__(pos, model)
-        # self.id = id
+
         self.__pos = pos
         self.__probability = 0
         self.__trailposition = trailposition
@@ -85,47 +93,84 @@ class TrailElement(Agent):
 
 
 class Trail:
-    def __init__(self, model, trail_iter=200):
-        self.__model = model
+    def __init__(self, model, trail_iter=200, tourists=1):
+        self.model = model
         self.__trail = []
         self.__trail_iter = trail_iter
         self.__trail_length = 0
         self.__start_position = None
+        self.__tourists = tourists
 
-    def create_trail(self):
-        model = self.get_model()
-        x = random.randrange(round(model.width))
-        y = random.randrange(round(model.height))
+        trail = []
+        length = 0
+        x = random.randrange(round(self.model.width))
+        y = random.randrange(round(self.model.height))
         self.set_trail_start((x, y))
 
         trail_element = TrailElement((x, y), self, 0)
-        self.append_to_trail(trail_element)
-        model.grid.place_agent(trail_element, (x, y))
-
+        trail.append(trail_element)
+        self.model.grid.place_agent(trail_element, (x, y))
+        length += 1
+        tourists = []
+        for i in range(0, self.get_tourists()):
+            tourists.append(Tourist(self.get_trail_start(), self.model))
+        self.set_tourists(tourists)
+        prev_x = 0
+        prev_y = 0
         for i in range(1, self.get_iter()):
-            next_trail = model.grid.get_neighborhood((x, y), moore=True)
+            next_trail = self.model.grid.get_neighborhood((x, y), moore=True)
             (temp_x, temp_y) = random.choice(next_trail)
-            next_next_trail = model.grid.get_neighborhood((temp_x, temp_y), moore=True)
+            next_next_trail = self.model.grid.get_neighborhood((temp_x, temp_y), moore=True)
 
             trails_number = 0
             for cell in next_next_trail:
-                if model.grid.get_cell_list_contents([cell]):
+                content = self.model.grid.get_cell_list_contents([cell])
+                if content:
                     trails_number += 1
 
             if trails_number < 2:
-                trail_element = TrailElement((x, y), self, i)
-                self.append_to_trail(trail_element)
-                model.grid.place_agent(trail_element, (temp_x, temp_y))
+                trail_element = TrailElement((temp_x, temp_y), self, i)
+                trail.append(trail_element)
+                self.model.grid.place_agent(trail_element, (temp_x, temp_y))
+                length += 1
                 x = temp_x
                 y = temp_y
+
+
+        self.set_trail(trail)
+        self.set_length(length)
+
+    @staticmethod
+    def advance():
+        return
+
+    def get_trail_from_position(self, position):
+        trail = self.get_trail()
+        length = self.get_length()
+        if position < 1 or position >= length:
+            return
+        else:
+            return trail[position]
+
+    def get_next_trail(self, position):
+        trail = self.get_trail()
+        length = self.get_length()
+        if position >= length:
+            return
+        else:
+            return trail[position + 1]
+
+    def get_previous_trail(self, position):
+        trail = self.get_trail()
+        if position < 1:
+            return
+        else:
+            return trail[position - 1]
 
     def evaluate(self):
         trail_elements = self.get_trail()
         for elements in trail_elements:
             elements.evaluate()
-
-    def get_model(self):
-        return self.__model
 
     def get_length(self):
         return self.__trail_length
@@ -139,18 +184,17 @@ class Trail:
     def get_trail_start(self):
         return self.__start_position
 
+    def get_tourists(self):
+        return self.__tourists
+
+    def set_tourists(self, tourists):
+        self.__tourists = tourists
+
     def set_trail(self, elements):
         self.__trail = elements
 
     def set_length(self, length):
         self.__trail_length = length
 
-    def set_model(self, model):
-        self.__model = model
-
     def set_trail_start(self, start):
         self.__start_position = start
-
-    def append_to_trail(self, element):
-        self.__trail.append(element)
-        self.__trail_length += 1
