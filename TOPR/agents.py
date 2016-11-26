@@ -17,6 +17,7 @@ class Tourist(Agent):
         self.moore = moore
         self.model = model
         self.__direction = 'forward'
+        self.__model = model
         self.__energy = energy
         self.__pos = pos
 
@@ -28,8 +29,10 @@ class Tourist(Agent):
         Step one cell in any allowable direction with concrete probability distribution.
         0.89 - forward, 0.1 - return, 0.01 - stay in place
         """
+        model = self.get_model()
         x, y = self.get_position()
-        elements = list(self.model.grid[x][y])
+
+        elements = list(model.grid[x][y])
 
         for i in range(0, len(elements)):
             if type(elements[i]) is TrailElement:
@@ -56,6 +59,12 @@ class Tourist(Agent):
 
     def set_direction(self, direction):
         self.__direction = direction
+
+    def set_model(self, model):
+        self.__model = model
+
+    def get_model(self):
+        return self.__model
 
 
 class TrailElement(Agent):
@@ -115,8 +124,7 @@ class Trail:
         for i in range(0, self.get_tourists()):
             tourists.append(Tourist(self.get_trail_start(), self.model))
         self.set_tourists(tourists)
-        prev_x = 0
-        prev_y = 0
+
         for i in range(1, self.get_iter()):
             next_trail = self.model.grid.get_neighborhood((x, y), moore=True)
             (temp_x, temp_y) = random.choice(next_trail)
@@ -135,7 +143,6 @@ class Trail:
                 length += 1
                 x = temp_x
                 y = temp_y
-
 
         self.set_trail(trail)
         self.set_length(length)
