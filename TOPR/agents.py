@@ -30,17 +30,21 @@ class Tourist(Agent):
         0.89 - forward, 0.1 - return, 0.01 - stay in place
         """
         model = self.get_model()
-        x, y = self.get_position()
+        trail = model.trail.get_trail()
+        self.model.grid.move_agent(self, trail[model.steps_performed].get_geo_pos())
 
-        elements = list(model.grid[x][y])
+        # x, y = self.get_position()
 
-        for i in range(0, len(elements)):
-            if type(elements[i]) is TrailElement:
-                trail_position = elements[i].get_position_in_trail()
-                next_trail = self.model.trail.get_trail_from_position(trail_position + 1)
-                if next_trail:
-                    where_to_go = next_trail.get_geo_pos()
-                    self.model.grid.move_agent(self, where_to_go)
+
+        # elements = list(model.grid[x][y])
+
+        # for i in range(0, len(elements)):
+        #     if type(elements[i]) is TrailElement:
+        #         trail_position = elements[i].get_position_in_trail()
+        #         next_trail = self.model.trail.get_trail_from_position(trail_position + 1)
+        #         if next_trail:
+        #             where_to_go = next_trail.get_geo_pos()
+        #             self.model.grid.move_agent(self, trail[model.steps_performed].get_geo_pos())
 
     def get_energy(self):
         return self.__energy
@@ -120,6 +124,7 @@ class Trail:
         trail.append(trail_element)
         self.model.grid.place_agent(trail_element, (x, y))
         length += 1
+
         tourists = []
         for i in range(0, self.get_tourists()):
             tourists.append(Tourist(self.get_trail_start(), self.model))
@@ -132,8 +137,9 @@ class Trail:
 
             trails_number = 0
             for cell in next_next_trail:
+
                 content = self.model.grid.get_cell_list_contents([cell])
-                if content:
+                if content:  # and type(content[0]) is not TrailElement:
                     trails_number += 1
 
             if trails_number < 2:

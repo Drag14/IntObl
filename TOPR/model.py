@@ -20,10 +20,12 @@ class TOPRAction(Model):
         self.width = w
         self.grid = MultiGrid(self.height, self.width, torus=False)
         self.schedule = SimultaneousActivation(self)
-        self.trail = Trail(self, tourists=1)
+        self.trail = Trail(self, trail_iter=100, tourists=1)
+        self.steps_performed = 0
 
     def step(self):
         """
         Have the scheduler advance each cell by one step
         """
         self.schedule.step()
+        self.steps_performed += 1
