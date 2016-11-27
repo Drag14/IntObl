@@ -23,21 +23,39 @@ class Tourist(Agent):
 
         self.model.grid.place_agent(self, pos)
         self.model.schedule.add(self)
+        self.prob_forward = 0.9
+        self.prob_backward = 0.09
+        self.prob_stay = 0.01
 
     def advance(self):
         """
         Step one cell in any allowable direction with concrete probability distribution.
         0.89 - forward, 0.1 - return, 0.01 - stay in place
         """
-        model = self.get_model()
-        trail = model.trail.get_trail()
-        self.model.grid.move_agent(self, trail[model.steps_performed].get_geo_pos())
+        trail = self.model.trail.get_trail()
+        if self.model.steps_performed+1 < self.model.trail.get_length():
+            if self.model.steps_performed + 1 < 2:
+                trail[self.model.steps_performed].set_probability(self.prob_stay)
+                geo_position = trail[self.model.steps_performed].get_geo_pos()
+                tourist_in_place = Tourist(geo_position, self.model)
+                self.model.grid.place_agent(tourist_in_place, trail[self.model.steps_performed].get_geo_pos())
+            else:
+                trail[self.model.steps_performed].set_probability(self.prob_stay)
+                geo_position = trail[self.model.steps_performed].get_geo_pos()
+                tourist_in_place = Tourist(geo_position, self.model)
+                self.model.grid.place_agent(tourist_in_place, geo_position)
+
+                trail[self.model.steps_performed-1].set_probability(self.prob_backward)
+                geo_position = trail[self.model.steps_performed-1].get_geo_pos()
+                tourist_backward = Tourist(geo_position, self.model)
+                self.model.grid.place_agent(tourist_backward, geo_position)
+
+            self.model.grid.move_agent(self, trail[self.model.steps_performed+1].get_geo_pos())
+            trail[self.model.steps_performed+1].set_probability(self.prob_forward)
+
 
         # x, y = self.get_position()
-
-
         # elements = list(model.grid[x][y])
-
         # for i in range(0, len(elements)):
         #     if type(elements[i]) is TrailElement:
         #         trail_position = elements[i].get_position_in_trail()
@@ -81,10 +99,16 @@ class TrailElement(Agent):
         self.__pos = pos
         self.__probability = 0
         self.__trailposition = trailposition
+        self.__tourists = []
 
     @staticmethod
     def advance():
         return
+
+    def add_tourist(self, tourist):
+        tourists = self.get_tourists()
+        tourists.append(tourist)
+        self.set_tourists(tourists)
 
     def get_probability(self):
         return self.__probability
@@ -95,6 +119,9 @@ class TrailElement(Agent):
     def get_position_in_trail(self):
         return self.__trailposition
 
+    def get_tourists(self):
+        return self.__tourists
+
     def set_probability(self, probability):
         self.__probability *= probability
 
@@ -103,6 +130,9 @@ class TrailElement(Agent):
 
     def set_position_in_trail(self, position_in_trail):
         self.__trailposition = position_in_trail
+
+    def set_tourists(self, tourists):
+        self.__tourists = tourists
 
 
 class Trail:
@@ -124,11 +154,6 @@ class Trail:
         trail.append(trail_element)
         self.model.grid.place_agent(trail_element, (x, y))
         length += 1
-
-        tourists = []
-        for i in range(0, self.get_tourists()):
-            tourists.append(Tourist(self.get_trail_start(), self.model))
-        self.set_tourists(tourists)
 
         for i in range(1, self.get_iter()):
             next_trail = self.model.grid.get_neighborhood((x, y), moore=True)
@@ -152,6 +177,11 @@ class Trail:
 
         self.set_trail(trail)
         self.set_length(length)
+
+        tourists = []
+        for i in range(0, self.get_tourists()):
+            tourists.append(Tourist(self.get_trail_start(), self.model))
+        self.set_tourists(tourists)
 
     @staticmethod
     def advance():
