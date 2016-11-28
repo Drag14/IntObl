@@ -32,37 +32,28 @@ class Tourist(Agent):
         Step one cell in any allowable direction with concrete probability distribution.
         0.89 - forward, 0.1 - return, 0.01 - stay in place
         """
-        trail = self.model.trail.get_trail()
-        if self.model.steps_performed+1 < self.model.trail.get_length():
-            if self.model.steps_performed + 1 < 2:
-                trail[self.model.steps_performed].set_probability(self.prob_stay)
-                geo_position = trail[self.model.steps_performed].get_geo_pos()
-                tourist_in_place = Tourist(geo_position, self.model)
-                self.model.grid.place_agent(tourist_in_place, trail[self.model.steps_performed].get_geo_pos())
-            else:
-                trail[self.model.steps_performed].set_probability(self.prob_stay)
-                geo_position = trail[self.model.steps_performed].get_geo_pos()
-                tourist_in_place = Tourist(geo_position, self.model)
-                self.model.grid.place_agent(tourist_in_place, geo_position)
-
-                trail[self.model.steps_performed-1].set_probability(self.prob_backward)
-                geo_position = trail[self.model.steps_performed-1].get_geo_pos()
-                tourist_backward = Tourist(geo_position, self.model)
-                self.model.grid.place_agent(tourist_backward, geo_position)
-
-            self.model.grid.move_agent(self, trail[self.model.steps_performed+1].get_geo_pos())
-            trail[self.model.steps_performed+1].set_probability(self.prob_forward)
 
 
-        # x, y = self.get_position()
-        # elements = list(model.grid[x][y])
-        # for i in range(0, len(elements)):
-        #     if type(elements[i]) is TrailElement:
-        #         trail_position = elements[i].get_position_in_trail()
-        #         next_trail = self.model.trail.get_trail_from_position(trail_position + 1)
-        #         if next_trail:
-        #             where_to_go = next_trail.get_geo_pos()
-        #             self.model.grid.move_agent(self, trail[model.steps_performed].get_geo_pos())
+        # trail = self.model.trail.get_trail()
+        # if self.model.steps_performed+1 < self.model.trail.get_length():
+        #     if self.model.steps_performed + 1 < 2:
+        #         trail[self.model.steps_performed].set_probability(self.prob_stay)
+        #         geo_position = trail[self.model.steps_performed].get_geo_pos()
+        #         tourist_in_place = Tourist(geo_position, self.model)
+        #         self.model.grid.place_agent(tourist_in_place, trail[self.model.steps_performed].get_geo_pos())
+        #     else:
+        #         trail[self.model.steps_performed].set_probability(self.prob_stay)
+        #         geo_position = trail[self.model.steps_performed].get_geo_pos()
+        #         tourist_in_place = Tourist(geo_position, self.model)
+        #         self.model.grid.place_agent(tourist_in_place, geo_position)
+        #
+        #         trail[self.model.steps_performed-1].set_probability(self.prob_backward)
+        #         geo_position = trail[self.model.steps_performed-1].get_geo_pos()
+        #         tourist_backward = Tourist(geo_position, self.model)
+        #         self.model.grid.place_agent(tourist_backward, geo_position)
+        #
+        self.model.grid.move_agent(self, self.model.trail.get_trail()[self.model.steps_performed+1].get_geo_pos())
+        self.model.trail.get_trail()[self.model.steps_performed+1].set_probability(self.prob_forward)
 
     def get_energy(self):
         return self.__energy
@@ -97,7 +88,7 @@ class TrailElement(Agent):
         super().__init__(pos, model)
 
         self.__pos = pos
-        self.__probability = 0
+        self.__probability = 1
         self.__trailposition = trailposition
         self.__tourists = []
 
