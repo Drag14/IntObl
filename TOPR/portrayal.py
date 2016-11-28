@@ -10,7 +10,7 @@ def tourist_trial_portrayal(agent):
 
     if type(agent) is Tourist:
         portrayal["Shape"] = "circle"
-        portrayal["Color"] = "Red"
+        portrayal["Color"] = "Black"
         portrayal["r"] = 0.5
         portrayal["Layer"] = 1
 
@@ -26,7 +26,7 @@ def tourist_trial_portrayal(agent):
         portrayal["y"] = y
 
         color_specify = round(probability*10)
-        print(color_specify)
+
         color = color_def(color_specify)
         portrayal["Color"] = color
         return portrayal
