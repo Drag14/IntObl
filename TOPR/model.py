@@ -18,6 +18,7 @@ class TOPRAction(Model):
         super().__init__()
         self.height = h
         self.width = w
+        self.frequency = 2
         self.grid = MultiGrid(self.height, self.width, torus=False)
         self.schedule = SimultaneousActivation(self)
         self.trail = Trail(self, trail_iter=100, tourists=1)

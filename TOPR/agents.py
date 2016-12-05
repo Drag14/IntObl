@@ -5,8 +5,10 @@ import random
 class Tourist(Agent):
     """Represents a single Tourist cell in the simulation."""
 
-    def __init__(self, pos, model, energy=5, moore=True, add_to_schedule=True,
-                 starting_position=0, direction='forward'):
+    def __init__(self, pos, model, energy=1, moore=True, add_to_schedule=True,
+                 probability=1, position_iter=0, direction='forward', tourist_id=1,
+                 prob_forward=0.9, prob_backward=0.09, prob_stay=0.01):
+
         """
         grid: The MultiGrid object in which the agent lives.
         x: The agent's current x coordinate
@@ -21,94 +23,108 @@ class Tourist(Agent):
         self.__model = model
         self.__energy = energy
         self.__pos = pos
-        self.__starting_position = starting_position
+        self.__position_iter = position_iter
+        self.__probability = probability
+        self.__tourist_id = tourist_id
+        self.__prob_forward = prob_forward
+        self.__prob_backward = prob_backward
+        self.__prob_stay = prob_stay
 
         if add_to_schedule:
             self.model.schedule.add(self)
 
-        self.prob_forward = 0.9
-        self.prob_backward = 0.09
-        self.prob_stay = 0.01
-
         self.model.grid.place_agent(self, pos)
+
+    def multiply_tourists(self):
+        tourists_to_add = []
+
+        if self.get_direction() == 'forward':
+
+            self.set_direction('stay')
+
+            if self.get_position_iter() < self.model.trail.get_length():
+                self.set_probability(self.get_prob_forward())
+                geo_position = self.model.trail.get_trail()[self.get_position_iter() + 1].get_geo_pos()
+
+                tourist_forward = Tourist(geo_position, self.model, direction='forward',
+                                          add_to_schedule=False, position_iter=self.get_position_iter())
+                self.model.grid.place_agent(tourist_forward, geo_position)
+                tourists_to_add.append(tourist_forward)
+
+            if self.get_position_iter() > 1:
+                self.set_probability(self.get_prob_backward())
+                geo_position = self.model.trail.get_trail()[self.get_position_iter() - 1].get_geo_pos()
+                tourist_back = Tourist(geo_position, self.model, direction='backward',
+                                       add_to_schedule=False, position_iter=self.get_position_iter())
+                self.model.grid.place_agent(tourist_back, geo_position)
+                tourists_to_add.append(tourist_back)
+
+        elif self.get_direction() == 'backward':
+            self.set_direction('stay')
+
+            if self.get_position_iter() < self.model.trail.get_length():
+                self.set_probability(self.get_prob_backward())
+                geo_position = self.model.trail.get_trail()[self.get_position_iter() + 1].get_geo_pos()
+
+                tourist_forward = Tourist(geo_position, self.model, direction='forward',
+                                          add_to_schedule=False, position_iter=self.get_position_iter())
+                self.model.grid.place_agent(tourist_forward, geo_position)
+                tourists_to_add.append(tourist_forward)
+
+            if self.get_position_iter() > 1:
+                self.set_probability(self.get_prob_forward())
+                geo_position = self.model.trail.get_trail()[self.get_position_iter() - 1].get_geo_pos()
+                tourist_back = Tourist(geo_position, self.model, direction='backward',
+                                       add_to_schedule=False, position_iter=self.get_position_iter())
+                self.model.grid.place_agent(tourist_back, geo_position)
+                tourists_to_add.append(tourist_back)
+
+        self.model.trail.set_tourists(self.model.trail.get_tourists()+len(tourists_to_add))
+        return tourists_to_add
+
+    def move(self):
+        if self.get_direction() == 'forward' and self.get_position_iter() < self.model.trail.get_length()-1:
+            self.model.grid.move_agent(self, self.model.trail.
+                                       get_trail()[self.get_position_iter() + 1].get_geo_pos())
+            self.set_probability(self.get_prob_forward())
+            self.increment_position_iter()
+
+        elif self.get_direction() == 'backward' and 1 < self.get_position_iter():
+            self.model.grid.move_agent(self, self.model.trail.
+                                       get_trail()[self.get_position_iter() - 1].get_geo_pos())
+            self.set_probability(self.get_prob_forward())
+            self.decrement_position_iter()
+
+        elif self.get_direction() == 'stay':
+            self.set_probability(self.get_prob_stay())
 
     def advance(self):
         """
         Step one cell in any allowable direction with concrete probability distribution.
         0.89 - forward, 0.1 - return, 0.01 - stay in place
         """
-        tourists_to_add = []
+        tourists = []
 
-        if self.model.trail.get_remembered_tourists():
-            for tourist in self.model.trail.get_remembered_tourists():
-                self.model.schedule.add(tourist)
-            self.model.trail.remember_tourists([])
+        if self.model.trail.advance_counter > 0:
+            if self.model.trail.get_length() >= self.model.steps_performed > 0 == self. \
+                    model.steps_performed % self.model.frequency:
+                tourists = self.multiply_tourists()
+            else:
+                self.move()
 
-        if self.model.trail.get_length() >= self.model.steps_performed > 0 == self.model.steps_performed % 10:
+            if self.model.trail.get_remembered_tourists():
+                for tourist in self.model.trail.get_remembered_tourists():
+                    self.model.schedule.add(tourist)
+                self.model.trail.clear_remember_tourists()
 
-            geo_position = self.model.trail.get_trail()[self.model.steps_performed].get_geo_pos()
-            tourist_in_place = Tourist(geo_position, self.model, add_to_schedule=False,
-                                       starting_position=self.model.steps_performed, direction='stay')
-            self.model.grid.place_agent(tourist_in_place, self.model.trail
-                                        .get_trail()[self.model.steps_performed]
-                                        .get_geo_pos())
-            tourists_to_add.append(tourist_in_place)
+            self.model.trail.remember_tourists(tourists)
+            self.model.trail.advance_counter -= 1
 
-            if self.get_direction() == 'forward':
-                self.model.trail.get_trail()[self.model.steps_performed - 1].set_probability(self.prob_backward)
-                geo_position = self.model.trail.get_trail()[self.model.steps_performed - 1].get_geo_pos()
+    def decrement_position_iter(self):
+        self.__position_iter -= 1
 
-                tourist_back = Tourist(geo_position, self.model, direction='backward',
-                                       add_to_schedule=False, starting_position=self.model.steps_performed)
-                self.model.grid.place_agent(tourist_back, self.model.trail
-                                            .get_trail()[self.model.steps_performed]
-                                            .get_geo_pos())
-                tourists_to_add.append(tourist_back)
-
-            elif self.get_direction() == 'backward':
-                self.model.trail.get_trail()[self.model.steps_performed + 1].set_probability(self.prob_backward)
-                geo_position = self.model.trail.get_trail()[self.model.steps_performed + 1].get_geo_pos()
-
-                tourist_forward = Tourist(geo_position, self.model, direction='forward',
-                                          add_to_schedule=False, starting_position=self.model.steps_performed)
-
-                self.model.grid.place_agent(tourist_forward, self.model.trail
-                                            .get_trail()[self.model.steps_performed]
-                                            .get_geo_pos())
-
-                tourists_to_add.append(tourist_forward)
-
-        if self.get_direction() == 'forward':
-            self.model.grid.move_agent(self, self.model.trail.
-                                       get_trail()[self.get_starting_position() + 1].get_geo_pos())
-            self.model.trail.get_trail()[self.get_starting_position() + 1].set_probability(self.prob_forward)
-            self.increment_starting_position()
-
-        elif self.get_direction() == 'backward':
-            self.model.grid.move_agent(self, self.model.trail.
-                                       get_trail()[self.get_starting_position() - 1].get_geo_pos())
-            self.model.trail.get_trail()[self.get_starting_position() - 1].set_probability(self.prob_forward)
-            self.decrement_starting_position()
-
-        else:
-            self.set_direction('forward')
-
-            geo_position = self.model.trail.get_trail()[self.model.steps_performed].get_geo_pos()
-            tourist_back = Tourist(geo_position, self.model, direction='backward', add_to_schedule=False)
-            self.model.grid.place_agent(tourist_back, self.model.trail
-                                        .get_trail()[self.model.steps_performed]
-                                        .get_geo_pos())
-            self.model.trail.get_trail()[self.model.steps_performed - 1].set_probability(self.prob_forward)
-            tourists_to_add.append(tourist_back)
-
-        if tourists_to_add:
-            self.model.trail.remember_tourists(tourists_to_add)
-
-    def decrement_starting_position(self):
-        self.__starting_position -= 1
-
-    def increment_starting_position(self):
-        self.__starting_position += 1
+    def increment_position_iter(self):
+        self.__position_iter += 1
 
     def get_energy(self):
         return self.__energy
@@ -116,11 +132,11 @@ class Tourist(Agent):
     def set_energy(self, energy):
         self.__energy += energy
 
-    def get_starting_position(self):
-        return self.__starting_position
+    def get_position_iter(self):
+        return self.__position_iter
 
-    def set_starting_position(self, pos):
-        self.__starting_position = pos
+    def set_position_iter(self, pos):
+        self.__position_iter = pos
 
     def get_position(self):
         return self.__pos
@@ -140,30 +156,42 @@ class Tourist(Agent):
     def get_model(self):
         return self.__model
 
+    def get_probability(self):
+        return self.__probability
 
-class TrailElement(Agent):
-    def __init__(self, pos, model, trailposition):
+    def set_probability(self, probability):
+        self.__probability = probability
+
+    def get_tourist_number(self):
+        return self.__tourist_id
+
+    def set_tourist_number(self, num_id):
+        self.__tourist_id = num_id
+
+    def get_prob_forward(self):
+        return self.__prob_forward
+
+    def get_prob_stay(self):
+        return self.__prob_stay
+
+    def get_prob_backward(self):
+        return self.__prob_backward
+
+
+class TrailElement:
+    def __init__(self, pos, trailposition):
         """
         Create a cell of trail, at the given x, y position.
         """
-        super().__init__(pos, model)
 
         self.__pos = pos
-        self.__probability = 1
         self.__trailposition = trailposition
         self.__tourists = []
-
-    @staticmethod
-    def advance():
-        return
 
     def add_tourist(self, tourist):
         tourists = self.get_tourists()
         tourists.append(tourist)
         self.set_tourists(tourists)
-
-    def get_probability(self):
-        return self.__probability
 
     def get_geo_pos(self):
         return self.__pos
@@ -174,9 +202,6 @@ class TrailElement(Agent):
     def get_tourists(self):
         return self.__tourists
 
-    def set_probability(self, probability):
-        self.__probability *= probability
-
     def set_geo_pos(self, pos):
         self.__pos = pos
 
@@ -186,15 +211,20 @@ class TrailElement(Agent):
     def set_tourists(self, tourists):
         self.__tourists = tourists
 
-class Trail:
+    def get_tourists_number(self):
+        return len(self.get_tourists())
+
+
+class Trail(Agent):
     def __init__(self, model, trail_iter=200, tourists=1):
-        self.model = model
+        super().__init__(1, model)
         self.__trail = []
         self.__trail_iter = trail_iter
         self.__trail_length = 0
         self.__start_position = None
         self.__tourists = tourists
         self.__last_tourists = []
+        self.advance_counter = 0
 
         trail = []
         length = 0
@@ -202,8 +232,7 @@ class Trail:
         y = random.randrange(round(self.model.height))
         self.set_trail_start((x, y))
 
-        trail_element = TrailElement((x, y), self.model, 0)
-        trail_element.set_probability(0.9)
+        trail_element = TrailElement((x, y), 0)
         trail.append(trail_element)
 
         self.model.grid.place_agent(trail_element, (x, y))
@@ -218,11 +247,11 @@ class Trail:
             for cell in next_next_trail:
 
                 content = self.model.grid.get_cell_list_contents([cell])
-                if content:  # and type(content[0]) is not TrailElement:
+                if content:
                     trails_number += 1
 
             if trails_number < 2:
-                trail_element = TrailElement((temp_x, temp_y), self, i)
+                trail_element = TrailElement((temp_x, temp_y), i)
                 trail.append(trail_element)
                 self.model.grid.place_agent(trail_element, (temp_x, temp_y))
                 length += 1
@@ -232,13 +261,14 @@ class Trail:
         self.set_trail(trail)
         self.set_length(length)
 
-        tourists = []
         for i in range(0, self.get_tourists()):
-            tourists.append(Tourist(self.get_trail_start(), self.model))
-        self.set_tourists(tourists)
+            self.get_trail()[0].add_tourist(Tourist(self.get_trail_start(), self.model))
 
-    @staticmethod
-    def advance():
+        self.advance_counter = self.get_tourists()
+        self.model.schedule.add(self)
+
+    def advance(self):
+        self.advance_counter = self.get_tourists()
         return
 
     def get_trail_from_position(self, position):
@@ -251,6 +281,9 @@ class Trail:
 
     def remember_tourists(self, tourists):
         self.__last_tourists = tourists
+
+    def clear_remember_tourists(self):
+        del self.__last_tourists[:]
 
     def get_remembered_tourists(self):
         return self.__last_tourists
@@ -274,6 +307,13 @@ class Trail:
         trail_elements = self.get_trail()
         for elements in trail_elements:
             elements.evaluate()
+
+    def agents_count(self):
+        trail = self.get_trail()
+        tourists_number = 0
+        for cell in trail:
+            tourists_number += cell.get_tourists_number()
+        return tourists_number
 
     def get_length(self):
         return self.__trail_length
