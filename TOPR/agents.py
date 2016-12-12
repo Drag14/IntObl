@@ -6,7 +6,7 @@ class Tourist(Agent):
     """Represents a single Tourist cell in the simulation."""
 
     def __init__(self, unique_id, model, position, energy=1, moore=True, add_to_schedule=True,
-                 probability=0.0, position_in_trail=0, prob_forward=0.9,
+                 probability=1.0, position_in_trail=0, prob_forward=0.9,
                  prob_backward=0.09, prob_stay=0.01):
 
         """
@@ -233,7 +233,7 @@ class Trail:
             length += 1
 
         trail_node1 = Trail_Node(unique_id=(x, y), model=self.model, contiguous_element=trail_element)
-        trail_left, trail_middle, trail_right = self.node_crossing(trail_node1, left=30, middle=20, right=10)
+        trail_left, trail_middle, trail_right = self.node_crossing(trail_node1, left=30, middle=20, right=60)
 
         trail_node2 = Trail_Node(unique_id=trail_left.get_geo_pos(), model=self.model, contiguous_element=trail_left)
         trail_left2, trail_middle2, trail_right2 = self.node_crossing(trail_node2, left=15, middle=15, right=35)
@@ -241,6 +241,16 @@ class Trail:
         trail_node3 = Trail_Node(unique_id=trail_middle.get_geo_pos(), model=self.model,
                                  contiguous_element=trail_middle)
         trail_left3, trail_middle3, trail_right3 = self.node_crossing(trail_node3, left=40, middle=100, right=0)
+
+        trail_node4 = Trail_Node(unique_id=trail_right2.get_geo_pos(), model=self.model,
+                                 contiguous_element=trail_right2)
+        trail_left5, trail_middle5, trail_right5 = self.node_crossing(trail_node4, left=40, middle=55, right=0)
+
+        trail_node4 = Trail_Node(unique_id=trail_right.get_geo_pos(), model=self.model,
+                                 contiguous_element=trail_right)
+        trail_left4, trail_middle4, trail_right4 = self.node_crossing(trail_node4, left=60, middle=20, right=0)
+
+
 
         self.model.grid.place_agent(Tourist(position=self.get_trail_start(), unique_id=1, model=self.model),
                                     self.get_trail_start())
