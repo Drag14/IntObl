@@ -24,7 +24,7 @@ class TOPRAction(Model):
         self.grid = MultiGrid(self.height, self.width, torus=False)
         self.schedule_tourists = SimultaneousActivation(self)
         self.schedule_trail_elements = SimultaneousActivation(self)
-        self.trail = Trail(self, trail_iter=100, tourists=1)
+        self.trail = Trail(self, tourists=1)
 
     def step(self):
         """
