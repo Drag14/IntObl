@@ -2,7 +2,7 @@ from mesa import Model
 from mesa.time import SimultaneousActivation
 from mesa.space import MultiGrid
 
-from TOPR.agents import Trail, Tourist
+from TOPR.agents import Trail, TrailElement
 from TOPR.config import height, width
 
 
@@ -21,9 +21,10 @@ class TOPRAction(Model):
         self.tourists_on_trail = 0
         self.frequency = 5
         self.steps_of_tourist_1 = 1
-        self.grid = MultiGrid(self.height, self.width, torus=False)
         self.schedule_tourists = SimultaneousActivation(self)
         self.schedule_trail_elements = SimultaneousActivation(self)
+        self.step_performed = 1
+        self.grid = MultiGrid(self.height, self.width, torus=False)
         self.trail = Trail(self, tourists=1)
 
     def step(self):
@@ -32,4 +33,10 @@ class TOPRAction(Model):
         """
         self.schedule_tourists.step()
         self.schedule_tourists = SimultaneousActivation(self)
+        for element in self.trail.trail:
+            if type(element) is TrailElement:
+                if element.get_trail_gradient() == self.step_performed:
+                    self.schedule_trail_elements.add(element)
         self.schedule_trail_elements.step()
+
+        self.step_performed += 1
