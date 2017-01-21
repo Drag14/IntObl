@@ -25,12 +25,16 @@ class TOPRAction(Model):
         self.schedule_trail_elements = SimultaneousActivation(self)
         self.step_performed = 1
         self.grid = MultiGrid(self.height, self.width, torus=False)
-        self.trail = Trail(self, tourists=1)
+        self.trail = Trail(self)
+        self.maximum_probability = 0
+        self.minimum_probability = 1
 
     def step(self):
         """
         Have the scheduler advance each cell by one step
         """
+        self.maximum_probability = 0
+        self.minimum_probability = 1
         self.schedule_tourists.step()
         self.schedule_tourists = SimultaneousActivation(self)
         for element in self.trail.trail:
@@ -38,5 +42,4 @@ class TOPRAction(Model):
                 if element.get_trail_gradient() == self.step_performed:
                     self.schedule_trail_elements.add(element)
         self.schedule_trail_elements.step()
-
         self.step_performed += 1
