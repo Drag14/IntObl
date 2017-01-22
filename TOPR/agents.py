@@ -367,8 +367,9 @@ class Trail:
         self.model = model
         self._start_position = []
         self.trail = []
-        self.trail_for_two()
-        # self.trail_for_three_tourists()
+        # self.trail_for_two()
+        self.trail_for_three()
+        # self.test_trail()
 
     def trail_for_two(self):
         x = [20, 60]
@@ -416,16 +417,15 @@ class Trail:
         for element in trail_node2.elements:
             self.trail.append(element)
 
-    def trail_for_three_tourists(self):
-        x = [20, 100, 160]
+    def trail_for_three(self):
+        x = [50, 90, 130]
         y = 190
         for i in range(0, 3):
             trail_element = TrailElement(unique_id=(x[i], y), model=self.model, trail_gradient=0)
             self.set_trail_start(trail_element)
             self.trail.append(trail_element)
             self.model.schedule_trail_elements.add(trail_element)
-            start_tourist = Tourist(position=(x[i], y), unique_id=i, model=self.model,
-                                    probability=1)
+            start_tourist = Tourist(position=(x[i], y), unique_id=i, model=self.model)
             self.model.grid.place_agent(start_tourist, (x[i], y))
 
         trail_indicator = []
@@ -436,137 +436,143 @@ class Trail:
                 trail_element = TrailElement(unique_id=(x, y - j), model=self.model, trail_gradient=j)
                 if trail_element is not None:
                     self.trail.append(trail_element)
-
-            trail_indicator.append(trail_element)
+            if trail_element is not None:
+                trail_indicator.append(trail_element)
 
         trail_node1 = TrailNode(unique_id=trail_indicator[0].get_geo_pos(), model=self.model,
-                                contiguous_element=trail_indicator[0], left=True, middle=False, right=True)
+                                contiguous_element=trail_indicator[0], left=False, middle=True)
         self.add_node_to_trail(trail_node1)
-        trail_node1.extend_node(left=15, middle=0, right=40)
+
+        trail_node1.extend_node(0, 88, 20)
 
         for element in trail_node1.elements:
             self.trail.append(element)
 
         grad = trail_node1.node_right.get_trail_gradient()
         x, y = trail_node1.node_right.get_geo_pos()
-        trail_element = None
-        for j in range(1, 20):
+        trail_remember = None
+        for j in range(1, 50):
+            trail_element = TrailElement(unique_id=(x, y - j), model=self.model, trail_gradient=grad + j)
+            if trail_element is not None:
+                self.trail.append(trail_element)
+                trail_remember = trail_element
+
+        trail_node123a = TrailNode(unique_id=trail_remember.get_geo_pos(), model=self.model,
+                                   contiguous_element=trail_remember, left=True, middle=False, right=True)
+        self.add_node_to_trail(trail_node123a)
+        trail_node123a.extend_node(30, 0, 30)
+
+        for element in trail_node123a.elements:
+            self.trail.append(element)
+
+        grad = trail_node123a.node_right.get_trail_gradient()
+        x, y = trail_node123a.node_right.get_geo_pos()
+        for j in range(1, 50):
+            trail_element = TrailElement(unique_id=(x, y - j), model=self.model, trail_gradient=grad + j)
+            if trail_element is not None:
+                self.trail.append(trail_element)
+
+        grad = trail_node123a.node_left.get_trail_gradient()
+        x, y = trail_node123a.node_left.get_geo_pos()
+        for j in range(1, 50):
             trail_element = TrailElement(unique_id=(x, y - j), model=self.model, trail_gradient=grad + j)
             if trail_element is not None:
                 self.trail.append(trail_element)
 
         trail_node2 = TrailNode(unique_id=trail_indicator[1].get_geo_pos(), model=self.model,
-                                contiguous_element=trail_indicator[1], left=True, middle=True, right=False)
+                                contiguous_element=trail_indicator[1], right=False, middle=False)
         self.add_node_to_trail(trail_node2)
-        trail_node2.extend_node(left=40, middle=170, right=0)
+        trail_node2.extend_node(20, 0, 0)
 
         for element in trail_node2.elements:
             self.trail.append(element)
 
-        trail_node12 = TrailNode(unique_id=trail_element.get_geo_pos(), model=self.model,
-                                 contiguous_element=trail_element, left=True, middle=True, right=True)
-        self.add_node_to_trail(trail_node12)
-        trail_node12.extend_node(left=40, middle=40, right=40)
+        trail_node3 = TrailNode(unique_id=trail_indicator[2].get_geo_pos(), model=self.model,
+                                contiguous_element=trail_indicator[2], right=False, middle=True)
+        self.add_node_to_trail(trail_node3)
+        trail_node3.extend_node(60, 40, 0)
 
-        for element in trail_node12.elements:
+        for element in trail_node3.elements:
             self.trail.append(element)
 
-        grad = trail_node12.node_left.get_trail_gradient()
-        x, y = trail_node12.node_left.get_geo_pos()
+        trail_node3a = TrailNode(unique_id=trail_node3.node_middle.get_geo_pos(), model=self.model,
+                                 contiguous_element=trail_node3.node_middle, right=True, middle=False, left=True)
+        self.add_node_to_trail(trail_node3a)
+        trail_node3a.extend_node(20, 0, 20)
+
+        for element in trail_node3a.elements:
+            self.trail.append(element)
+
+        trail_node3a1 = TrailNode(unique_id=trail_node3a.node_left.get_geo_pos(), model=self.model,
+                                  contiguous_element=trail_node3a.node_left, left=False, middle=False, right=True)
+        self.add_node_to_trail(trail_node3a1)
+        trail_node3a1.extend_node(0, 0, 20)
+
+        for element in trail_node3a1.elements:
+            self.trail.append(element)
+
+        trail_node3a2 = TrailNode(unique_id=trail_node3a.node_right.get_geo_pos(), model=self.model,
+                                  contiguous_element=trail_node3a.node_right, left=True, middle=False, right=False)
+        self.add_node_to_trail(trail_node3a2)
+        trail_node3a2.extend_node(20, 0, 0)
+
+        for element in trail_node3a2.elements:
+            self.trail.append(element)
+
+        grad = trail_node3a1.node_right.get_trail_gradient()
+        x, y = trail_node3a1.node_right.get_geo_pos()
+        trail_remember = None
         for j in range(1, 20):
             trail_element = TrailElement(unique_id=(x, y - j), model=self.model, trail_gradient=grad + j)
             if trail_element is not None:
                 self.trail.append(trail_element)
+                trail_remember = trail_element
 
-        trail_node123 = TrailNode(unique_id=trail_element.get_geo_pos(), model=self.model,
-                                  contiguous_element=trail_element, left=False, middle=False, right=True)
-        self.add_node_to_trail(trail_node123)
-        trail_node123.extend_node(left=0, middle=0, right=50)
+        trail_node3end = TrailNode(unique_id=trail_remember.get_geo_pos(), model=self.model,
+                                   contiguous_element=trail_remember, left=True, middle=True, right=False)
+        self.add_node_to_trail(trail_node3end)
+        trail_node3end.extend_node(30, 50, 0)
 
-        for element in trail_node123.elements:
+        for element in trail_node3end.elements:
             self.trail.append(element)
 
-        grad = trail_node123.node_right.get_trail_gradient()
-        x, y = trail_node123.node_right.get_geo_pos()
-        for j in range(1, 31):
-            trail_element = TrailElement(unique_id=(x + j, y), model=self.model, trail_gradient=grad + j)
-            self.trail.append(trail_element)
+    def test_trail(self):
+        x = 60
+        y = 190
 
-        trail_node122 = TrailNode(unique_id=trail_node12.node_middle.get_geo_pos(), model=self.model,
-                                  contiguous_element=trail_node12.node_middle, left=False, middle=False, right=True)
-        self.add_node_to_trail(trail_node12)
-        trail_node122.extend_node(left=0, middle=0, right=40)
+        trail_element = TrailElement(unique_id=(x, y), model=self.model, trail_gradient=0)
+        self.set_trail_start(trail_element)
+        self.trail.append(trail_element)
+        self.model.schedule_trail_elements.add(trail_element)
+        start_tourist = Tourist(position=(x, y), unique_id=1, model=self.model)
+        self.model.grid.place_agent(start_tourist, (x, y))
 
-        for element in trail_node122.elements:
+        trail_indicator = []
+        for tourist in self._start_position:
+            (x, y) = tourist.get_geo_pos()
+            trail_element = None
+            for j in range(1, 20):
+                trail_element = TrailElement(unique_id=(x, y - j), model=self.model, trail_gradient=j)
+                if trail_element is not None:
+                    self.trail.append(trail_element)
+            if trail_element is not None:
+                trail_indicator.append(trail_element)
+
+        trail_node1 = TrailNode(unique_id=trail_indicator[0].get_geo_pos(), model=self.model,
+                                contiguous_element=trail_indicator[0])
+        self.add_node_to_trail(trail_node1)
+
+        trail_node1.extend_node(5, 5, 5)
+
+        for element in trail_node1.elements:
             self.trail.append(element)
-
-        trail_node3 = TrailNode(unique_id=trail_indicator[2].get_geo_pos(), model=self.model,
-                                contiguous_element=trail_indicator[2], left=True, middle=False, right=True)
-        self.add_node_to_trail(trail_node3)
-        trail_node3.extend_node(left=60, middle=0, right=20)
-
-        for element in trail_node3.elements:
-            self.trail.append(element)
-
-        grad = trail_node3.node_right.get_trail_gradient()
-        x, y = trail_node3.node_right.get_geo_pos()
-        for j in range(1, 40):
-            trail_element = TrailElement(unique_id=(x, y-j), model=self.model, trail_gradient=grad + j)
-            self.trail.append(trail_element)
-
-        trail_node32 = TrailNode(unique_id=trail_element.get_geo_pos(), model=self.model,
-                                 contiguous_element=trail_element, left=True, middle=True, right=False)
-        self.add_node_to_trail(trail_node32)
-        trail_node3.extend_node(left=80, middle=113, right=0)
-
-        for element in trail_node3.elements:
-            self.trail.append(element)
-
-    # def random_trail_for_few_tourists(self, tourist_number):
-    #     for i in range(0, tourist_number):
-    #         x = random.randrange(round(i * self.model.width / tourist_number),
-    #                              round((i + 1) * self.model.width / tourist_number))
-    #         y = random.randrange(self.model.height - 10, self.model.height)
-    #         trail_element = TrailElement(unique_id=(x, y), model=self.model, trail_gradient=0)
-    #         self.set_trail_start(trail_element)
-    #         self.trail.append(trail_element)
-    #         self.model.schedule_trail_elements.add(trail_element)
-    #         start_tourist = Tourist(position=(x, y), unique_id=tourist_number, model=self.model,
-    #                                 probability=1)
-    #         self.model.grid.place_agent(start_tourist, (x, y))
-    #
-    #     trail_indicator = []
-    #     for tourist in self._start_position:
-    #         (x, y) = tourist.get_geo_pos()
-    #         trail_element = None
-    #         for j in range(1, 20):
-    #             trail_element = TrailElement(unique_id=(x, y), model=self.model, trail_gradient=j)
-    #             self.trail.append(trail_element)
-    #             y -= 1
-    #         trail_indicator.append(trail_element)
-    #
-    #     trail_node = TrailNode(unique_id=trail_indicator[0].get_geo_pos(), model=self.model,
-    #                            contiguous_element=trail_indicator[0])
-    #     self.add_node_to_trail(trail_node)
-    #     elements, trail_left, trail_middle, trail_right = self.node_crossing(trail_node, left=5,
-    #                                                                          middle=10, right=50)
-    #     for element in elements:
-    #         self.trail.append(element)
-    #
-    #     trail_node = TrailNode(unique_id=trail_indicator[1].get_geo_pos(), model=self.model,
-    #                            contiguous_element=trail_indicator[1])
-    #     self.add_node_to_trail(trail_node)
-    #     elements, trail_left, trail_middle, trail_right = self.node_crossing(trail_node, left=100,
-    #                                                                          middle=20, right=0)
-    #     for element in elements:
-    #         self.trail.append(element)
 
     def add_node_to_trail(self, node):
         if node.node_left is not None:
             self.trail.append(node.node_left)
-        elif node.node_right is not None:
+        if node.node_right is not None:
             self.trail.append(node.node_right)
-        elif node.node_middle is not None:
+        if node.node_middle is not None:
             self.trail.append(node.node_middle)
 
     def get_trail_start(self):
